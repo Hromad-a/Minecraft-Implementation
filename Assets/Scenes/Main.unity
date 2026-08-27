@@ -412,7 +412,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5bcd4f9a8e85374a9b32fe2c9634dc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::World
-  worldSettings: {fileID: 0}
+  worldSettings: {fileID: 11400000, guid: 71cbffda4f8496a4b907cbded6a54f59, type: 2}
 --- !u!4 &729394189
 Transform:
   m_ObjectHideFlags: 0

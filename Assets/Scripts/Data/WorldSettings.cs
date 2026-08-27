@@ -4,7 +4,9 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "World Settings", fileName = "WorldSettings")]
 public class WorldSettings : ScriptableObject
 {
-    [SerializeField] private int ySize = 50;
+    [SerializeField] private int ySize = 64;
+    [SerializeField] private int xSize = 64;
+    [SerializeField] private int zSize = 64;
     [SerializeField] private int chunkSize = 8;
     [SerializeField, Tooltip("No value = Random")] private string seed;
     [SerializeField] private Vector3 perlinValue;
@@ -21,6 +23,7 @@ public class WorldSettings : ScriptableObject
         Debug.Log("Seed offseted z: " + (perlinValue.z + WorldGenerator.GetSubSeed(seed, "zOffset")));
         Debug.Log(Perlin.Noise(perlinValue.x + WorldGenerator.GetSubSeed(seed, "xOffset"), perlinValue.y, perlinValue.z + WorldGenerator.GetSubSeed(seed, "zOffset")));
         Debug.Log("Fbm: " + Perlin.Fbm(perlinValue.x, perlinValue.y, perlinValue.z, octave));
+
 
     }
 }
