@@ -1,17 +1,14 @@
+using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class WorldRenderer : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        var world = GetComponent<World>();
-        if(world)
-            RenderWorld(world.WorldData, world.WorldSettings.ChunkSize);
-    }
+    List<GameObject> cubes = new();
 
     public void RenderWorld(WorldData world, int chunkSize)
     {
+        ClearCubes();
         foreach(var ch in world.chunks)
         {
             Vector3 chunkPos = new Vector3(ch.Key.x * chunkSize, ch.Key.y * chunkSize, ch.Key.z * chunkSize);
@@ -33,9 +30,19 @@ public class WorldRenderer : MonoBehaviour
                     var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cube.transform.SetParent(transform, false);
                     cube.transform.position = new Vector3(center.x + x, center.y + y, center.z + z);
-                    cube.transform.localScale = Vector3.one * .15f;
+                    cubes.Add(cube);
                 }
             }
+        }
+    }
+
+    void ClearCubes()
+    {
+        if(cubes.Count == 0) return;
+        for (int i = cubes.Count - 1; i >= 0; i--)
+        {
+            GameObject c = cubes[i];
+            Destroy(c);
         }
     }
 }

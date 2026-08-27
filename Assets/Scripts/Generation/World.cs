@@ -9,6 +9,11 @@ public class World : MonoBehaviour
 
     void Awake()
     {
+        RegenerateWorld();
+    }
+    public void RegenerateWorld()
+    {
         worldData = WorldGenerator.GenerateWorld(worldSettings, worldSettings.XSize, worldSettings.YSize, worldSettings.ZSize, worldSettings.Seed);
+        GetComponent<WorldRenderer>()?.RenderWorld(worldData, worldSettings.ChunkSize);
     }
 }

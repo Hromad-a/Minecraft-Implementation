@@ -22,6 +22,10 @@ public class WorldSettings : ScriptableObject
 
     public void RegenerateWorld()
     {
+        if(!Application.isPlaying) return;
+        var world = FindAnyObjectByType<World>();
+        world.RegenerateWorld();
+        return;
         var seed = WorldGenerator.ResolveSeed(Seed);
         //WorldGenerator.
         Debug.Log("Seed offseted x: " + (perlinValue.x + WorldGenerator.GetSubSeed(seed, "xOffset")));

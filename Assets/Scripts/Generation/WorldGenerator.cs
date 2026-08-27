@@ -17,10 +17,7 @@ public static class WorldGenerator
     public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
     {
         var world = new WorldData(seed, ySize);
-        //Vygenerovat chunky v rozsahu/chunk size
-        
-        //Proloopovat vsechny chunky po x, y a z a v kazdem vygenerovat vsechny bloky
-
+        var posOffset = GetSubSeed(settings.Seed, "posOffset");
         for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
         {
             for(int chunkCountZ = zSize / settings.ChunkSize; chunkCountZ > 0; chunkCountZ--)
@@ -28,7 +25,7 @@ public static class WorldGenerator
                 for(int chunkCountY = ySize / settings.ChunkSize; chunkCountY > 0; chunkCountY--)
                 {
                     Vector3Int chunkCoordinate = new Vector3Int(chunkCountX, chunkCountY, chunkCountZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate);
+                    var newChunk = GenerateChunk(settings, chunkCoordinate, posOffset);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
             }
@@ -37,7 +34,7 @@ public static class WorldGenerator
     }
 
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate)
+    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, float posOffset)
     {
         var size = settings.ChunkSize;
         var blockData = new BlockData[size * size * size];
@@ -47,11 +44,13 @@ public static class WorldGenerator
             {
                 for(int localZ = 0; localZ < size; localZ++)
                 {
-                    float offsetedWorldX = localX * size + GetSubSeed(settings.Seed, "posOffset");
-                    float offsetedWorldY = localY * size + GetSubSeed(settings.Seed, "yOffset");
-                    float offsetedWorldZ = localZ * size + GetSubSeed(settings.Seed, "zOffset");
-                    var perlinValue = Perlin.Fbm(offsetedWorldX, offsetedWorldY, offsetedWorldZ, settings.Octave);
-                    blockData[BlockIndex(localX, localY, localZ, size)].IsPresent = perlinValue > 0f;
+                    int worldY = localY + chunkCoordinate.y * size;
+                    float noiseScale = 40f;
+                    float offsetedWorldX = localX + chunkCoordinate.x * size + posOffset;
+                    float offsetedWorldZ = localZ + chunkCoordinate.z * size + posOffset;
+                    var perlinValue = Perlin.Fbm(offsetedWorldX / noiseScale, offsetedWorldZ / noiseScale, settings.Octave);
+                    float height = (perlinValue + 1f) * 0.5f * (settings.YSize * .9f);
+                    blockData[BlockIndex(localX, localY, localZ, size)].IsPresent = worldY < height;
                 }
 
             }
