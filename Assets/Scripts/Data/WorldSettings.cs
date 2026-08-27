@@ -14,6 +14,11 @@ public class WorldSettings : ScriptableObject
 
     public string Seed { get { return seed; } }
     public int YSize { get { return ySize; } }
+    public int XSize { get { return xSize; } }
+    public int ZSize { get { return zSize; } }
+
+    public int ChunkSize {get{return chunkSize;}}
+    public int Octave { get { return octave; } }
 
     public void RegenerateWorld()
     {

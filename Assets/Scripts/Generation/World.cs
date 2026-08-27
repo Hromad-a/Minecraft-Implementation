@@ -4,9 +4,11 @@ public class World : MonoBehaviour
 {
     [SerializeField] WorldSettings worldSettings;
     WorldData worldData;
+    public WorldData WorldData {get {return worldData;}}
+    public WorldSettings WorldSettings { get{return worldSettings;}}
 
-    void Start()
+    void Awake()
     {
-        worldData = new WorldData(worldSettings.Seed, worldSettings.YSize);
+        worldData = WorldGenerator.GenerateWorld(worldSettings, worldSettings.XSize, worldSettings.YSize, worldSettings.ZSize, worldSettings.Seed);
     }
 }

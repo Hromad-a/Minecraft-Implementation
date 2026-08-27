@@ -5,7 +5,7 @@ using UnityEngine;
 [Serializable]
 public class WorldData
 {
-    public Dictionary<Vector3Int, BlockData[]> chunks;
+    public Dictionary<Vector3Int, BlockData[]> chunks = new();
     public string seed;
     public int sizeY;
 
