@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +12,7 @@ public class WorldSettings : ScriptableObject
     [SerializeField, Tooltip("No value = Random")] private string seed;
     [SerializeField] private Vector3 perlinValue;
     [SerializeField] private int octave = 3;
+    [SerializeField] private List<BlockDefinitionBase> blocks;
 
     public string Seed { get { return seed; } }
     public int YSize { get { return ySize; } }
@@ -19,6 +21,7 @@ public class WorldSettings : ScriptableObject
 
     public int ChunkSize {get{return chunkSize;}}
     public int Octave { get { return octave; } }
+    public List<BlockDefinitionBase> Blocks {get {return blocks;}}
 
     public void RegenerateWorld()
     {

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class WorldGenerator
 {
-
+    public const float noiseScale = 40f;
     public static string ResolveSeed(string configuredSeed) => string.IsNullOrEmpty(configuredSeed) ? System.Guid.NewGuid().ToString() : configuredSeed;
     public static float GetSubSeed(string seed, string noiseName = "")
     {
@@ -45,12 +45,15 @@ public static class WorldGenerator
                 for(int localZ = 0; localZ < size; localZ++)
                 {
                     int worldY = localY + chunkCoordinate.y * size;
-                    float noiseScale = 40f;
+                    int worldX = localX + chunkCoordinate.x * size;
+                    int worldZ = localZ + chunkCoordinate.z * size;
                     float offsetedWorldX = localX + chunkCoordinate.x * size + posOffset;
                     float offsetedWorldZ = localZ + chunkCoordinate.z * size + posOffset;
-                    var perlinValue = Perlin.Fbm(offsetedWorldX / noiseScale, offsetedWorldZ / noiseScale, settings.Octave);
+                    var perlinValue = Perlin.Fbm(worldX / noiseScale, worldZ / noiseScale, settings.Octave);
                     float height = (perlinValue + 1f) * 0.5f * (settings.YSize * .9f);
-                    blockData[BlockIndex(localX, localY, localZ, size)].IsPresent = worldY < height;
+                    var block = blockData[BlockIndex(localX, localY, localZ, size)];
+                    block.IsPresent = worldY < height;
+                    block.TypeId = PickBlockTypeId(worldX, worldY, worldZ, settings);
                 }
 
             }
@@ -63,9 +66,13 @@ public static class WorldGenerator
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
 
-    public static int PickBlockTypeId(int worldX, int worldY, int worldZ, string seed)
+    public static int PickBlockTypeId(int worldX, int worldY, int worldZ, WorldSettings settings)
     {
-        
+        //Based on height define block types
+
+        //var perlinValue = Perlin.Fbm(offsetedWorldX / noiseScale, offsetedWorldZ / noiseScale, settings.Octave);
+        settings.Blocks
+
         return 0;
     }
 
