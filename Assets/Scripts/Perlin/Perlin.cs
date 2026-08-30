@@ -75,26 +75,30 @@ public static class Perlin
     {
         var f = 0.0f;
         var w = 0.5f;
+        var totalWeight = 0.0f;
         for (var i = 0; i < octave; i++)
         {
             f += w * Noise(x);
+            totalWeight += w;
             x *= 2.0f;
             w *= 0.5f;
         }
-        return f;
+        return totalWeight > 0f ? f / totalWeight : 0f;
     }
 
     public static float Fbm(Vector2 coord, int octave)
     {
         var f = 0.0f;
         var w = 0.5f;
+        var totalWeight = 0.0f;
         for (var i = 0; i < octave; i++)
         {
             f += w * Noise(coord);
+            totalWeight += w;
             coord *= 2.0f;
             w *= 0.5f;
         }
-        return f;
+        return totalWeight > 0f ? f / totalWeight : 0f;
     }
 
     public static float Fbm(float x, float y, int octave)
@@ -106,13 +110,15 @@ public static class Perlin
     {
         var f = 0.0f;
         var w = 0.5f;
+        var totalWeight = 0.0f;
         for (var i = 0; i < octave; i++)
         {
             f += w * Noise(coord);
+            totalWeight += w;
             coord *= 2.0f;
             w *= 0.5f;
         }
-        return f;
+        return totalWeight > 0f ? f / totalWeight : 0f;
     }
 
     public static float Fbm(float x, float y, float z, int octave)
