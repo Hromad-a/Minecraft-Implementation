@@ -8,6 +8,7 @@ public class WorldSettings : ScriptableObject
     [SerializeField] private int ySize = 64;
     [SerializeField] private int xSize = 64;
     [SerializeField] private int zSize = 64;
+    [SerializeField] private int baseHeightOffset = 0;
     [SerializeField] private int chunkSize = 8;
     [SerializeField, Tooltip("No value = Random")] private string seed;
     [SerializeField] private Vector3 perlinValue;
@@ -18,6 +19,7 @@ public class WorldSettings : ScriptableObject
     public int YSize { get { return ySize; } }
     public int XSize { get { return xSize; } }
     public int ZSize { get { return zSize; } }
+    public int BaseHeightOffset => baseHeightOffset;
 
     public int ChunkSize {get{return chunkSize;}}
     public int Octave { get { return octave; } }
@@ -37,6 +39,20 @@ public class WorldSettings : ScriptableObject
         Debug.Log("Fbm: " + Perlin.Fbm(perlinValue.x, perlinValue.y, perlinValue.z, octave));
 
 
+    }
+
+    public bool TryGetBlockById(int id, out BlockDefinitionBase block)
+    {
+        block = null;
+        foreach (var b in blocks)
+        {
+            if (b.Id == id)
+            {
+                block = b;
+                return true;
+            }
+        }
+        return false;
     }
 }
 

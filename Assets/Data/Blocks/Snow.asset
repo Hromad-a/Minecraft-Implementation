@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cac3da8753ec64479a8cbed671d90f7, type: 3}
   m_Name: Snow
   m_EditorClassIdentifier: Assembly-CSharp::BlockDefinitionOrdinary
-  id: 2
+  id: 3
   material: {fileID: 2100000, guid: 124a16080e24b43aa866381f54bf3c71, type: 2}
   mineDuration: 1
   heightRange: {x: 0.4, y: 0.6}

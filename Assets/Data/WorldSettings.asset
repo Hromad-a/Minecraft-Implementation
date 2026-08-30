@@ -16,6 +16,10 @@ MonoBehaviour:
   xSize: 48
   zSize: 48
   chunkSize: 8
-  seed: Seed4
+  seed: Seed
   perlinValue: {x: 24, y: 15, z: 3}
   octave: 3
+  blocks:
+  - {fileID: 11400000, guid: d4990335a2aa644edb5256ae9f739fed, type: 2}
+  - {fileID: 11400000, guid: 222bb5a69ff384375a2f0056bbb12c6e, type: 2}
+  - {fileID: 11400000, guid: 930d63bd198ce435b95941dc0d40b3fa, type: 2}

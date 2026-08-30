@@ -14,6 +14,6 @@ public class World : MonoBehaviour
     public void RegenerateWorld()
     {
         worldData = WorldGenerator.GenerateWorld(worldSettings, worldSettings.XSize, worldSettings.YSize, worldSettings.ZSize, worldSettings.Seed);
-        GetComponent<WorldRenderer>()?.RenderWorld(worldData, worldSettings.ChunkSize);
+        GetComponent<WorldRenderer>()?.RenderWorld(worldData, worldSettings);
     }
 }

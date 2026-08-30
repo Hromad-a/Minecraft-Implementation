@@ -1,23 +1,24 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class WorldRenderer : MonoBehaviour
 {
     List<GameObject> cubes = new();
 
-    public void RenderWorld(WorldData world, int chunkSize)
+    public void RenderWorld(WorldData world, WorldSettings settings)
     {
+        var chunkSize = settings.ChunkSize;
         ClearCubes();
         foreach(var ch in world.chunks)
         {
             Vector3 chunkPos = new Vector3(ch.Key.x * chunkSize, ch.Key.y * chunkSize, ch.Key.z * chunkSize);
-            RenderChunk(chunkPos, chunkSize, ch.Value);
+            RenderChunk(chunkPos, settings, ch.Value);
         }
     }
 
-    void RenderChunk(Vector3 center, int chunkSize, BlockData[] blocks)
+    void RenderChunk(Vector3 center, WorldSettings settings, BlockData[] blocks)
     {
+        var chunkSize = settings.ChunkSize;
         for(int x = 0; x < chunkSize; x++)
         {
             for(int y = 0; y < chunkSize; y++)
@@ -25,11 +26,14 @@ public class WorldRenderer : MonoBehaviour
                 for(int z = 0; z < chunkSize; z++)
                 {
                     var isPresent = blocks[WorldGenerator.BlockIndex(x, y, z, chunkSize)].IsPresent;
-                    if(!isPresent)
+                    var typeId = blocks[WorldGenerator.BlockIndex(x, y, z, chunkSize)].TypeId;
+                    if (!isPresent)
                         continue;
                     var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cube.transform.SetParent(transform, false);
                     cube.transform.position = new Vector3(center.x + x, center.y + y, center.z + z);
+                    if(cube.TryGetComponent<MeshRenderer>(out var mesh) && settings.TryGetBlockById(typeId, out var block))
+                        mesh.material = block.Material;
                     cubes.Add(cube);
                 }
             }

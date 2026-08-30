@@ -1,4 +1,4 @@
-
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class WorldGenerator
@@ -51,9 +51,9 @@ public static class WorldGenerator
                     float offsetedWorldZ = localZ + chunkCoordinate.z * size + posOffset;
                     var perlinValue = Perlin.Fbm(worldX / noiseScale, worldZ / noiseScale, settings.Octave);
                     float height = (perlinValue + 1f) * 0.5f * (settings.YSize * .9f);
-                    var block = blockData[BlockIndex(localX, localY, localZ, size)];
-                    block.IsPresent = worldY < height;
-                    block.TypeId = PickBlockTypeId(worldX, worldY, worldZ, settings);
+                    int i = BlockIndex(localX, localY, localZ, size);
+                    blockData[i].IsPresent = worldY < height;
+                    blockData[i].TypeId = PickBlockTypeId(worldX, worldY, worldZ, settings);
                 }
 
             }
@@ -68,12 +68,32 @@ public static class WorldGenerator
 
     public static int PickBlockTypeId(int worldX, int worldY, int worldZ, WorldSettings settings)
     {
-        //Based on height define block types
+        int lowestCubeHeight = settings.YSize+1;
+        int lowestCubeId = 0;
+        int highestCubeHeight = -1;
+        int highestCubeId = 0;
+        KeyValuePair<int, float> mostSuitableBlockType = new(0,-1f);
+        foreach (var b in settings.Blocks)
+        {
+            int minH = Mathf.RoundToInt(settings.YSize * b.HeightRange.x);
+            int maxH = Mathf.RoundToInt(settings.YSize * b.HeightRange.y);
+            if (minH < lowestCubeHeight)
+            {
+                lowestCubeHeight = minH;
+                lowestCubeId = b.Id;
+            }
+            if (maxH > highestCubeHeight)
+            {
+                highestCubeHeight = maxH;
+                highestCubeId = b.Id;
+            }
+            if (b.ContainsHeight(worldY, settings.YSize, out var influence) && mostSuitableBlockType.Value < influence)
+                mostSuitableBlockType = new(b.Id, influence);
+        }
+        if (worldY > highestCubeHeight) return highestCubeId;
+        if (worldY < lowestCubeHeight) return lowestCubeId;
 
-        //var perlinValue = Perlin.Fbm(offsetedWorldX / noiseScale, offsetedWorldZ / noiseScale, settings.Octave);
-        settings.Blocks
-
-        return 0;
+        return mostSuitableBlockType.Key;
     }
 
 
