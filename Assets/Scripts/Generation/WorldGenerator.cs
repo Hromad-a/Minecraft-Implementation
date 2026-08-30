@@ -10,7 +10,6 @@ public struct HeightBand
 
 public static class WorldGenerator
 {
-    public const float noiseScale = 40f;
     public static string ResolveSeed(string configuredSeed) => string.IsNullOrEmpty(configuredSeed) ? System.Guid.NewGuid().ToString() : configuredSeed;
     public static float GetSubSeed(string seed, string noiseName = "")
     {
@@ -24,6 +23,11 @@ public static class WorldGenerator
     public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
     {
         var world = new WorldData(seed, ySize);
+        if (settings.NoiseLayers == null || settings.NoiseLayers.Count == 0)
+        {
+            Debug.LogWarning("World generation skipped: WorldSettings has no noise layers.");
+            return world;
+        }
         var heightBands = BuildHeightBands(settings);
         for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
         {
@@ -81,10 +85,13 @@ public static class WorldGenerator
 
     static int GetTerrainHeight(WorldSettings settings, int worldX, int worldZ)
     {
-        float noise = Perlin.Fbm(worldX / noiseScale, worldZ / noiseScale, settings.Octave); // -1..1
-        float normalizedNoise = Mathf.InverseLerp(-1f, 1f, noise);                           //  0..1
-        int height = Mathf.CeilToInt(normalizedNoise * settings.YSize) + settings.BaseHeightOffset;
-        return Mathf.Clamp(height, 0, settings.YSize);
+        float height = 0f;
+        foreach (var layer in settings.NoiseLayers)
+        {
+            float noise = Perlin.Fbm(worldX / layer.NoiseScale, worldZ / layer.NoiseScale, layer.Octave); // -1..1
+            height += noise * layer.Amplitude + layer.HeightOffset;
+        }
+        return Mathf.Clamp(Mathf.CeilToInt(height), 0, settings.YSize);
     }
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
