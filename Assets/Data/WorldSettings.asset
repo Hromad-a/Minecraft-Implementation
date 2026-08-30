@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4acd31f62abc8cc488b2822869d0b2b7, type: 3}
   m_Name: WorldSettings
   m_EditorClassIdentifier: Assembly-CSharp::WorldSettings
-  ySize: 48
-  xSize: 48
-  zSize: 48
+  ySize: 32
+  xSize: 32
+  zSize: 32
+  baseHeightOffset: 30
   chunkSize: 8
   seed: Seed
   perlinValue: {x: 24, y: 15, z: 3}

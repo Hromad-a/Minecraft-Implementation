@@ -17,7 +17,6 @@ public static class WorldGenerator
     public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
     {
         var world = new WorldData(seed, ySize);
-        var posOffset = GetSubSeed(settings.Seed, "posOffset");
         for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
         {
             for(int chunkCountZ = zSize / settings.ChunkSize; chunkCountZ > 0; chunkCountZ--)
@@ -25,7 +24,7 @@ public static class WorldGenerator
                 for(int chunkCountY = ySize / settings.ChunkSize; chunkCountY > 0; chunkCountY--)
                 {
                     Vector3Int chunkCoordinate = new Vector3Int(chunkCountX, chunkCountY, chunkCountZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate, posOffset);
+                    var newChunk = GenerateChunk(settings, chunkCoordinate);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
             }
@@ -34,34 +33,35 @@ public static class WorldGenerator
     }
 
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, float posOffset)
+    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate)
     {
         var size = settings.ChunkSize;
         var blockData = new BlockData[size * size * size];
         for(int localX = 0; localX < size; localX++)
         {
-            for(int localY = 0; localY < size; localY++)
+            for(int localZ = 0; localZ < size; localZ++)
             {
-                for(int localZ = 0; localZ < size; localZ++)
+                int worldX = localX + chunkCoordinate.x * size;
+                int worldZ = localZ + chunkCoordinate.z * size;
+                int terrainHeight = GetTerrainHeight(settings, worldX, worldZ);
+                for(int localY = 0; localY < size; localY++)
                 {
                     int worldY = localY + chunkCoordinate.y * size;
-                    int worldX = localX + chunkCoordinate.x * size;
-                    int worldZ = localZ + chunkCoordinate.z * size;
-                    float offsetedWorldX = localX + chunkCoordinate.x * size + posOffset;
-                    float offsetedWorldZ = localZ + chunkCoordinate.z * size + posOffset;
-                    var perlinValue = Perlin.Fbm(worldX / noiseScale, worldZ / noiseScale, settings.Octave);
-                    float height = (perlinValue + 1f) * 0.5f * (settings.YSize * .9f);
                     int i = BlockIndex(localX, localY, localZ, size);
-                    blockData[i].IsPresent = worldY < height;
+                    blockData[i].IsPresent = worldY < terrainHeight;
                     blockData[i].TypeId = PickBlockTypeId(worldX, worldY, worldZ, settings);
                 }
-
             }
-
         }
-        
-
         return blockData;
+    }
+
+    static int GetTerrainHeight(WorldSettings settings, int worldX, int worldZ)
+    {
+        float noise = Perlin.Fbm(worldX / noiseScale, worldZ / noiseScale, settings.Octave); // -1..1
+        float normalizedNoise = Mathf.InverseLerp(-1f, 1f, noise);                           //  0..1
+        int height = Mathf.CeilToInt(normalizedNoise * settings.YSize) + settings.BaseHeightOffset;
+        return Mathf.Clamp(height, 0, settings.YSize);
     }
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
