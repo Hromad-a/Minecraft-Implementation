@@ -37,13 +37,13 @@ public static class WorldGenerator
         }
         var heightBands = BuildHeightBands(settings);
         var layerOffsets = BuildLayerOffsets(settings, seed);
-        for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
+        for(int chunkX = 0; chunkX < xSize / settings.ChunkSize; chunkX++)
         {
-            for(int chunkCountZ = zSize / settings.ChunkSize; chunkCountZ > 0; chunkCountZ--)
+            for(int chunkZ = 0; chunkZ < zSize / settings.ChunkSize; chunkZ++)
             {
-                for(int chunkCountY = ySize / settings.ChunkSize; chunkCountY > 0; chunkCountY--)
+                for(int chunkY = 0; chunkY < ySize / settings.ChunkSize; chunkY++)
                 {
-                    Vector3Int chunkCoordinate = new Vector3Int(chunkCountX, chunkCountY, chunkCountZ);
+                    Vector3Int chunkCoordinate = new Vector3Int(chunkX, chunkY, chunkZ);
                     var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands, layerOffsets);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
@@ -107,7 +107,7 @@ public static class WorldGenerator
 
     static int GetTerrainHeight(WorldSettings settings, LayerOffsets[] layerOffsets, int worldX, int worldZ)
     {
-        float height = 0f;
+        float height = settings.YSize * settings.GroundLevel;
         for (int i = 0; i < settings.NoiseLayers.Count; i++)
         {
             var layer = settings.NoiseLayers[i];

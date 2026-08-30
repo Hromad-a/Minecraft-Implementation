@@ -15,10 +15,12 @@ MonoBehaviour:
   ySize: 32
   xSize: 32
   zSize: 32
-  chunkSize: 8
-  seed: Seed
+  chunkSize: 4
+  groundLevel: 0.406
+  seed: Seed1
   noiseLayers:
   - {fileID: 11400000, guid: 1734b3a4aa361d04b8107bf15d24bfd4, type: 2}
+  - {fileID: 11400000, guid: 0e7fa1b3b3ba1084199ad2d4c638f82c, type: 2}
   - {fileID: 11400000, guid: 44617da185a267140bd87786308d0685, type: 2}
   blocks:
   - {fileID: 11400000, guid: d4990335a2aa644edb5256ae9f739fed, type: 2}

@@ -9,6 +9,7 @@ public class WorldSettings : ScriptableObject
     [SerializeField] private int xSize = 64;
     [SerializeField] private int zSize = 64;
     [SerializeField] private int chunkSize = 8;
+    [SerializeField, Range(0f, 1f), Tooltip("Default terrain height as fraction of world height")] private float groundLevel = 0.5f;
     [SerializeField, Tooltip("No value = Random")] private string seed;
     [SerializeField] private List<NoiseLayer> noiseLayers;
     [SerializeField] private List<BlockDefinitionBase> blocks;
@@ -18,6 +19,7 @@ public class WorldSettings : ScriptableObject
     public int XSize { get { return xSize; } }
     public int ZSize { get { return zSize; } }
     public int ChunkSize {get{return chunkSize;}}
+    public float GroundLevel { get { return groundLevel; } }
     public List<NoiseLayer> NoiseLayers { get { return noiseLayers; } }
     public List<BlockDefinitionBase> Blocks {get {return blocks;}}
 

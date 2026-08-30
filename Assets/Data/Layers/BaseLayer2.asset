@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 226e797fb95b9b1469224f72ba021b9c, type: 3}
-  m_Name: Mountains
+  m_Name: BaseLayer2
   m_EditorClassIdentifier: Assembly-CSharp::NoiseLayer
-  noiseScale: 40
-  octave: 1
-  amplitude: 50
-  heightOffset: 20
+  noiseScale: 11.3
+  octave: 5
+  amplitude: 16
+  heightOffset: 0
   mask:
     enabled: 1
-    noiseScale: 206.4
-    octave: 2
-    threshold: 0.37
-    feather: 0.098
+    noiseScale: 11.3
+    octave: 1
+    threshold: 0.36
+    feather: 1
     invert: 0
