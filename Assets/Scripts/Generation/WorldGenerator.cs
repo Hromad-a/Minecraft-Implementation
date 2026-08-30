@@ -111,16 +111,29 @@ public static class WorldGenerator
         for (int i = 0; i < settings.NoiseLayers.Count; i++)
         {
             var layer = settings.NoiseLayers[i];
+            if (!layer.Enabled)
+                continue;
             var offsets = layerOffsets[i];
             float mask = EvaluateMask(layer.Mask, offsets.Mask, worldX, worldZ);
             if (mask <= 0f)
                 continue;
-            float x = (worldX + offsets.Noise.x) / layer.NoiseScale;
-            float z = (worldZ + offsets.Noise.y) / layer.NoiseScale;
-            float noise = Perlin.Fbm(x, z, layer.Octave); // -1..1
+            float noise = SampleNoise(worldX + offsets.Noise.x, worldZ + offsets.Noise.y, layer.NoiseScale, layer.Octave, layer.Blur); // -1..1
             height += (noise * layer.Amplitude + layer.HeightOffset) * mask;
         }
         return Mathf.Clamp(Mathf.CeilToInt(height), 0, settings.YSize);
+    }
+
+    // fBm noise, optionally blurred by averaging samples around the point
+    public static float SampleNoise(float x, float z, float scale, int octave, float blur)
+    {
+        float noise = Perlin.Fbm(x / scale, z / scale, octave);
+        if (blur <= 0f)
+            return noise;
+        noise += Perlin.Fbm((x + blur) / scale, z / scale, octave)
+               + Perlin.Fbm((x - blur) / scale, z / scale, octave)
+               + Perlin.Fbm(x / scale, (z + blur) / scale, octave)
+               + Perlin.Fbm(x / scale, (z - blur) / scale, octave);
+        return noise / 5f;
     }
 
     // 0..1: like Photoshop levels applied to plain perlin noise
@@ -128,7 +141,7 @@ public static class WorldGenerator
     {
         if (!mask.Enabled)
             return 1f;
-        float noise = Perlin.Fbm((worldX + offset.x) / mask.NoiseScale, (worldZ + offset.y) / mask.NoiseScale, mask.Octave);
+        float noise = SampleNoise(worldX + offset.x, worldZ + offset.y, mask.NoiseScale, mask.Octave, mask.Blur);
         float value = mask.Feather <= 0f
             ? (noise >= mask.Threshold ? 1f : 0f)
             : Mathf.InverseLerp(mask.Threshold - mask.Feather, mask.Threshold + mask.Feather, noise);

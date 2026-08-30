@@ -12,14 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 226e797fb95b9b1469224f72ba021b9c, type: 3}
   m_Name: Mountains
   m_EditorClassIdentifier: Assembly-CSharp::NoiseLayer
+  enabled: 1
   noiseScale: 40
   octave: 1
-  amplitude: 50
-  heightOffset: 20
+  amplitude: 15
+  heightOffset: 10
+  blur: 0
   mask:
     enabled: 1
-    noiseScale: 206.4
+    noiseScale: 434
     octave: 2
-    threshold: 0.37
+    threshold: -0.08
     feather: 0.098
+    blur: 0
     invert: 0

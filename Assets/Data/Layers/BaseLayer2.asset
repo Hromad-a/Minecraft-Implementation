@@ -12,14 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 226e797fb95b9b1469224f72ba021b9c, type: 3}
   m_Name: BaseLayer2
   m_EditorClassIdentifier: Assembly-CSharp::NoiseLayer
+  enabled: 1
   noiseScale: 11.3
   octave: 5
   amplitude: 16
   heightOffset: 0
+  blur: 0
   mask:
     enabled: 1
     noiseScale: 11.3
     octave: 1
     threshold: 0.36
     feather: 1
+    blur: 0
     invert: 0

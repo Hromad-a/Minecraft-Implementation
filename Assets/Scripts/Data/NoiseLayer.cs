@@ -3,16 +3,20 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Noise Layer", fileName = "NoiseLayer")]
 public class NoiseLayer : ScriptableObject
 {
+    [SerializeField] private bool enabled = true;
     [SerializeField, Min(0.01f), Tooltip("Horizontal size of features in blocks")] private float noiseScale = 40f;
     [SerializeField, Min(1)] private int octave = 3;
     [SerializeField, Tooltip("Vertical strength: layer contributes ±amplitude blocks")] private float amplitude = 32f;
     [SerializeField] private int heightOffset = 0;
+    [SerializeField, Min(0f), Tooltip("Blur radius in blocks; 0 = off")] private float blur = 0f;
     [SerializeField] private NoiseMask mask;
 
+    public bool Enabled => enabled;
     public float NoiseScale => noiseScale;
     public int Octave => octave;
     public float Amplitude => amplitude;
     public int HeightOffset => heightOffset;
+    public float Blur => blur;
     public NoiseMask Mask => mask;
 }
 
@@ -24,6 +28,7 @@ public class NoiseMask
     [SerializeField, Min(1)] private int octave = 2;
     [SerializeField, Range(-1f, 1f), Tooltip("Noise above this value is visible")] private float threshold = 0f;
     [SerializeField, Range(0f, 1f), Tooltip("Edge softness; 0 = hard 1-bit edges")] private float feather = 0.1f;
+    [SerializeField, Min(0f), Tooltip("Blur radius in blocks; 0 = off")] private float blur = 0f;
     [SerializeField] private bool invert;
 
     public bool Enabled => enabled;
@@ -31,6 +36,7 @@ public class NoiseMask
     public int Octave => octave;
     public float Threshold => threshold;
     public float Feather => feather;
+    public float Blur => blur;
     public bool Invert => invert;
 }
 
@@ -49,9 +55,9 @@ public class NoiseLayerEditor : UnityEditor.Editor
         DrawDefaultInspector();
         var layer = (NoiseLayer)target;
         int previewHash = System.HashCode.Combine(
-            layer.NoiseScale, layer.Octave,
-            layer.Mask.Enabled, layer.Mask.NoiseScale, layer.Mask.Octave,
-            layer.Mask.Threshold, layer.Mask.Feather, layer.Mask.Invert);
+            System.HashCode.Combine(layer.NoiseScale, layer.Octave, layer.Blur),
+            System.HashCode.Combine(layer.Mask.Enabled, layer.Mask.NoiseScale, layer.Mask.Octave,
+                layer.Mask.Threshold, layer.Mask.Feather, layer.Mask.Blur, layer.Mask.Invert));
         if (previewHash != lastPreviewHash || noiseTexture == null)
         {
             lastPreviewHash = previewHash;
@@ -76,7 +82,7 @@ public class NoiseLayerEditor : UnityEditor.Editor
         {
             for (int x = 0; x < previewSize; x++)
             {
-                float noise = Perlin.Fbm(x / layer.NoiseScale, z / layer.NoiseScale, layer.Octave);
+                float noise = WorldGenerator.SampleNoise(x, z, layer.NoiseScale, layer.Octave, layer.Blur);
                 float noiseValue = Mathf.InverseLerp(-1f, 1f, noise);
                 noiseTexture.SetPixel(x, z, new Color(noiseValue, noiseValue, noiseValue));
                 float maskValue = WorldGenerator.EvaluateMask(layer.Mask, Vector2.zero, x, z);
