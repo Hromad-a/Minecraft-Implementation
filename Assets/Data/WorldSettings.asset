@@ -15,11 +15,11 @@ MonoBehaviour:
   ySize: 32
   xSize: 32
   zSize: 32
-  baseHeightOffset: 30
   chunkSize: 8
   seed: Seed
-  perlinValue: {x: 24, y: 15, z: 3}
-  octave: 3
+  noiseLayers:
+  - {fileID: 11400000, guid: 1734b3a4aa361d04b8107bf15d24bfd4, type: 2}
+  - {fileID: 11400000, guid: 44617da185a267140bd87786308d0685, type: 2}
   blocks:
   - {fileID: 11400000, guid: d4990335a2aa644edb5256ae9f739fed, type: 2}
   - {fileID: 11400000, guid: 222bb5a69ff384375a2f0056bbb12c6e, type: 2}

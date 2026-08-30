@@ -124,14 +124,15 @@ public static class WorldGenerator
     }
 
     // 0..1: like Photoshop levels applied to plain perlin noise
-    static float EvaluateMask(NoiseMask mask, Vector2 offset, int worldX, int worldZ)
+    public static float EvaluateMask(NoiseMask mask, Vector2 offset, int worldX, int worldZ)
     {
         if (!mask.Enabled)
             return 1f;
-        float noise = Perlin.Noise((worldX + offset.x) / mask.NoiseScale, (worldZ + offset.y) / mask.NoiseScale);
-        if (mask.Feather <= 0f)
-            return noise >= mask.Threshold ? 1f : 0f;
-        return Mathf.InverseLerp(mask.Threshold - mask.Feather, mask.Threshold + mask.Feather, noise);
+        float noise = Perlin.Fbm((worldX + offset.x) / mask.NoiseScale, (worldZ + offset.y) / mask.NoiseScale, mask.Octave);
+        float value = mask.Feather <= 0f
+            ? (noise >= mask.Threshold ? 1f : 0f)
+            : Mathf.InverseLerp(mask.Threshold - mask.Feather, mask.Threshold + mask.Feather, noise);
+        return mask.Invert ? 1f - value : value;
     }
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
