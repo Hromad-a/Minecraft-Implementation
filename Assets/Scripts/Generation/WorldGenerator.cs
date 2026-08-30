@@ -8,6 +8,12 @@ public struct HeightBand
     public int MaxHeight;
 }
 
+public struct LayerOffsets
+{
+    public Vector2 Noise;
+    public Vector2 Mask;
+}
+
 public static class WorldGenerator
 {
     public static string ResolveSeed(string configuredSeed) => string.IsNullOrEmpty(configuredSeed) ? System.Guid.NewGuid().ToString() : configuredSeed;
@@ -22,6 +28,7 @@ public static class WorldGenerator
 
     public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
     {
+        seed = ResolveSeed(seed);
         var world = new WorldData(seed, ySize);
         if (settings.NoiseLayers == null || settings.NoiseLayers.Count == 0)
         {
@@ -29,6 +36,7 @@ public static class WorldGenerator
             return world;
         }
         var heightBands = BuildHeightBands(settings);
+        var layerOffsets = BuildLayerOffsets(settings, seed);
         for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
         {
             for(int chunkCountZ = zSize / settings.ChunkSize; chunkCountZ > 0; chunkCountZ--)
@@ -36,7 +44,7 @@ public static class WorldGenerator
                 for(int chunkCountY = ySize / settings.ChunkSize; chunkCountY > 0; chunkCountY--)
                 {
                     Vector3Int chunkCoordinate = new Vector3Int(chunkCountX, chunkCountY, chunkCountZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands);
+                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands, layerOffsets);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
             }
@@ -60,7 +68,21 @@ public static class WorldGenerator
         return bands;
     }
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands)
+    public static LayerOffsets[] BuildLayerOffsets(WorldSettings settings, string seed)
+    {
+        var offsets = new LayerOffsets[settings.NoiseLayers.Count];
+        for (int i = 0; i < offsets.Length; i++)
+        {
+            offsets[i] = new LayerOffsets
+            {
+                Noise = new Vector2(GetSubSeed(seed, i + "x"), GetSubSeed(seed, i + "z")),
+                Mask = new Vector2(GetSubSeed(seed, i + "maskx"), GetSubSeed(seed, i + "maskz")),
+            };
+        }
+        return offsets;
+    }
+
+    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands, LayerOffsets[] layerOffsets)
     {
         var size = settings.ChunkSize;
         var blockData = new BlockData[size * size * size];
@@ -70,7 +92,7 @@ public static class WorldGenerator
             {
                 int worldX = localX + chunkCoordinate.x * size;
                 int worldZ = localZ + chunkCoordinate.z * size;
-                int terrainHeight = GetTerrainHeight(settings, worldX, worldZ);
+                int terrainHeight = GetTerrainHeight(settings, layerOffsets, worldX, worldZ);
                 for(int localY = 0; localY < size; localY++)
                 {
                     int worldY = localY + chunkCoordinate.y * size;
@@ -83,15 +105,33 @@ public static class WorldGenerator
         return blockData;
     }
 
-    static int GetTerrainHeight(WorldSettings settings, int worldX, int worldZ)
+    static int GetTerrainHeight(WorldSettings settings, LayerOffsets[] layerOffsets, int worldX, int worldZ)
     {
         float height = 0f;
-        foreach (var layer in settings.NoiseLayers)
+        for (int i = 0; i < settings.NoiseLayers.Count; i++)
         {
-            float noise = Perlin.Fbm(worldX / layer.NoiseScale, worldZ / layer.NoiseScale, layer.Octave); // -1..1
-            height += noise * layer.Amplitude + layer.HeightOffset;
+            var layer = settings.NoiseLayers[i];
+            var offsets = layerOffsets[i];
+            float mask = EvaluateMask(layer.Mask, offsets.Mask, worldX, worldZ);
+            if (mask <= 0f)
+                continue;
+            float x = (worldX + offsets.Noise.x) / layer.NoiseScale;
+            float z = (worldZ + offsets.Noise.y) / layer.NoiseScale;
+            float noise = Perlin.Fbm(x, z, layer.Octave); // -1..1
+            height += (noise * layer.Amplitude + layer.HeightOffset) * mask;
         }
         return Mathf.Clamp(Mathf.CeilToInt(height), 0, settings.YSize);
+    }
+
+    // 0..1: like Photoshop levels applied to plain perlin noise
+    static float EvaluateMask(NoiseMask mask, Vector2 offset, int worldX, int worldZ)
+    {
+        if (!mask.Enabled)
+            return 1f;
+        float noise = Perlin.Noise((worldX + offset.x) / mask.NoiseScale, (worldZ + offset.y) / mask.NoiseScale);
+        if (mask.Feather <= 0f)
+            return noise >= mask.Threshold ? 1f : 0f;
+        return Mathf.InverseLerp(mask.Threshold - mask.Feather, mask.Threshold + mask.Feather, noise);
     }
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
