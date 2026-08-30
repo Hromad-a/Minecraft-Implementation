@@ -1,6 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public struct HeightBand
+{
+    public int Id;
+    public int MinHeight;
+    public int MaxHeight;
+}
+
 public static class WorldGenerator
 {
     public const float noiseScale = 40f;
@@ -17,6 +24,7 @@ public static class WorldGenerator
     public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
     {
         var world = new WorldData(seed, ySize);
+        var heightBands = BuildHeightBands(settings);
         for(int chunkCountX = xSize / settings.ChunkSize; chunkCountX > 0; chunkCountX--)
         {
             for(int chunkCountZ = zSize / settings.ChunkSize; chunkCountZ > 0; chunkCountZ--)
@@ -24,7 +32,7 @@ public static class WorldGenerator
                 for(int chunkCountY = ySize / settings.ChunkSize; chunkCountY > 0; chunkCountY--)
                 {
                     Vector3Int chunkCoordinate = new Vector3Int(chunkCountX, chunkCountY, chunkCountZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate);
+                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
             }
@@ -32,8 +40,23 @@ public static class WorldGenerator
         return world;
     }
 
+    public static HeightBand[] BuildHeightBands(WorldSettings settings)
+    {
+        var bands = new HeightBand[settings.Blocks.Count];
+        for (int i = 0; i < bands.Length; i++)
+        {
+            var block = settings.Blocks[i];
+            bands[i] = new HeightBand
+            {
+                Id = block.Id,
+                MinHeight = Mathf.RoundToInt(settings.YSize * block.HeightRange.x),
+                MaxHeight = Mathf.RoundToInt(settings.YSize * block.HeightRange.y),
+            };
+        }
+        return bands;
+    }
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate)
+    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands)
     {
         var size = settings.ChunkSize;
         var blockData = new BlockData[size * size * size];
@@ -49,7 +72,7 @@ public static class WorldGenerator
                     int worldY = localY + chunkCoordinate.y * size;
                     int i = BlockIndex(localX, localY, localZ, size);
                     blockData[i].IsPresent = worldY < terrainHeight;
-                    blockData[i].TypeId = PickBlockTypeId(worldX, worldY, worldZ, settings);
+                    blockData[i].TypeId = PickBlockTypeId(worldX, worldY, worldZ, heightBands);
                 }
             }
         }
@@ -66,34 +89,36 @@ public static class WorldGenerator
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
 
-    public static int PickBlockTypeId(int worldX, int worldY, int worldZ, WorldSettings settings)
+    public static int PickBlockTypeId(int worldX, int worldY, int worldZ, HeightBand[] heightBands)
     {
-        int lowestCubeHeight = settings.YSize+1;
-        int lowestCubeId = 0;
-        int highestCubeHeight = -1;
-        int highestCubeId = 0;
-        KeyValuePair<int, float> mostSuitableBlockType = new(0,-1f);
-        foreach (var b in settings.Blocks)
+        int bestId = 0;
+        float bestInfluence = -1f;
+        int nearestId = 0;
+        int nearestDistance = int.MaxValue;
+        foreach (var band in heightBands)
         {
-            int minH = Mathf.RoundToInt(settings.YSize * b.HeightRange.x);
-            int maxH = Mathf.RoundToInt(settings.YSize * b.HeightRange.y);
-            if (minH < lowestCubeHeight)
+            if (worldY < band.MinHeight || worldY > band.MaxHeight)
             {
-                lowestCubeHeight = minH;
-                lowestCubeId = b.Id;
+                int distance = worldY < band.MinHeight ? band.MinHeight - worldY : worldY - band.MaxHeight;
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestId = band.Id;
+                }
+                continue;
             }
-            if (maxH > highestCubeHeight)
+            // influence: 1 at the band's middle, falling to 0 at its edges
+            int midHeight = (band.MinHeight + band.MaxHeight) / 2;
+            float influence = worldY >= midHeight
+                ? Mathf.InverseLerp(band.MaxHeight, midHeight, worldY)
+                : Mathf.InverseLerp(band.MinHeight, midHeight, worldY);
+            if (bestInfluence < influence)
             {
-                highestCubeHeight = maxH;
-                highestCubeId = b.Id;
+                bestId = band.Id;
+                bestInfluence = influence;
             }
-            if (b.ContainsHeight(worldY, settings.YSize, out var influence) && mostSuitableBlockType.Value < influence)
-                mostSuitableBlockType = new(b.Id, influence);
         }
-        if (worldY > highestCubeHeight) return highestCubeId;
-        if (worldY < lowestCubeHeight) return lowestCubeId;
-
-        return mostSuitableBlockType.Key;
+        return bestInfluence >= 0f ? bestId : nearestId;
     }
 
 
