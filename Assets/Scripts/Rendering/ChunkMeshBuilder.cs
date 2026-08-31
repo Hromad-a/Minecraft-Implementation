@@ -24,9 +24,15 @@ public static class ChunkMeshBuilder
         new[] { new Vector3(1,0,0), new Vector3(1,1,0), new Vector3(1,0,1), new Vector3(1,1,1) }, // right
     };
 
+    // ---- texture atlas: three tiles side by side; which tile each face uses ----
+    const int TopTile = 0, SideTile = 1, BottomTile = 2;
+    const float TileWidth = 1f / 3f;
+    static readonly int[] faceTile = { SideTile, SideTile, TopTile, BottomTile, SideTile, SideTile };
+
     // ---- build buffers, reused across chunks to avoid garbage ----
     static readonly List<Vector3> vertices = new();
     static readonly List<Vector3> normals = new();
+    static readonly List<Vector2> uvs = new();
     static readonly Dictionary<int, List<int>> trianglesByType = new();
 
     // Builds one chunk's mesh with only air-facing faces.
@@ -43,6 +49,7 @@ public static class ChunkMeshBuilder
         // -- reset the shared buffers --
         vertices.Clear();
         normals.Clear();
+        uvs.Clear();
         trianglesByType.Clear();
 
         // -- emit a face for every solid block side that touches air --
@@ -73,6 +80,7 @@ public static class ChunkMeshBuilder
         var mesh = new Mesh();
         mesh.SetVertices(vertices);
         mesh.SetNormals(normals);
+        mesh.SetUVs(0, uvs);
         mesh.subMeshCount = typeIds.Count;
         for (int s = 0; s < typeIds.Count; s++)
             mesh.SetTriangles(trianglesByType[typeIds[s]], s);
@@ -94,6 +102,14 @@ public static class ChunkMeshBuilder
             vertices.Add(localPos + corners[c]);
             normals.Add(normal);
         }
+
+        // UVs into the face's atlas tile; corner order is bl, tl, br, tr
+        float u0 = faceTile[face] * TileWidth;
+        float u1 = u0 + TileWidth;
+        uvs.Add(new Vector2(u0, 0f));
+        uvs.Add(new Vector2(u0, 1f));
+        uvs.Add(new Vector2(u1, 0f));
+        uvs.Add(new Vector2(u1, 1f));
 
         // two triangles over those corners
         triangles.Add(i);

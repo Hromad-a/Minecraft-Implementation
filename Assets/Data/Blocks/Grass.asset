@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockDefinitionOrdinary
   id: 2
   material: {fileID: 2100000, guid: 124a16080e24b43aa866381f54bf3c71, type: 2}
-  mineDuration: 1
+  mineDuration: 0.4
   heightRange: {x: 0.4, y: 0.6}

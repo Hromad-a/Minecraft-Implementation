@@ -17,7 +17,7 @@ MonoBehaviour:
   zSize: 128
   chunkSize: 8
   groundLevel: 0.5
-  seed: Seed
+  seed: 
   noiseLayers:
   - {fileID: 11400000, guid: 1734b3a4aa361d04b8107bf15d24bfd4, type: 2}
   - {fileID: 11400000, guid: 0e7fa1b3b3ba1084199ad2d4c638f82c, type: 2}
