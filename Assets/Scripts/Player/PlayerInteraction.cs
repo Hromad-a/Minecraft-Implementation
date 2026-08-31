@@ -7,7 +7,7 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private float reach = 5f;
 
-    CharacterController controller;
+    PlayerController player;
     int selectedBlockIndex;
     Vector3Int miningTarget;
     float miningProgress; // seconds spent holding on the current target
@@ -15,7 +15,7 @@ public class PlayerInteraction : MonoBehaviour
 
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
+        player = GetComponent<PlayerController>();
     }
 
     void Update()
@@ -71,6 +71,8 @@ public class PlayerInteraction : MonoBehaviour
             miningProgress = 0f;
         }
 
+        if (cell.y <= 0)
+            return; // the lowest layer is the world's floor: unminable
         if (!world.TryGetBlock(cell, out var block) || !block.IsPresent)
             return;
         if (!world.WorldSettings.TryGetBlockById(block.TypeId, out var definition) || definition.IsUnbreakable)
@@ -90,6 +92,8 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (!TryGetTargets(out _, out var cell))
             return;
+        if (cell.y >= world.WorldSettings.YSize)
+            return; // no building above the world's ceiling
         if (world.TryGetBlock(cell, out var block) && block.IsPresent)
             return;
         if (OverlapsPlayer(cell))
@@ -100,7 +104,7 @@ public class PlayerInteraction : MonoBehaviour
     bool OverlapsPlayer(Vector3Int cell)
     {
         var cellBounds = new Bounds((Vector3)cell + Vector3.one * 0.5f, Vector3.one);
-        return controller != null && cellBounds.Intersects(controller.bounds);
+        return player != null && cellBounds.Intersects(player.WorldBounds);
     }
 
     // Minimal HUD: crosshair, selected block, mining progress.

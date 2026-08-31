@@ -7,6 +7,7 @@ public class World : MonoBehaviour
     WorldRenderer worldRenderer;
     public WorldData WorldData {get {return worldData;}}
     public WorldSettings WorldSettings { get{return worldSettings;}}
+    public event System.Action Regenerated;
 
     void Awake()
     {
@@ -18,6 +19,16 @@ public class World : MonoBehaviour
     {
         worldData = WorldGenerator.GenerateWorld(worldSettings, worldSettings.XSize, worldSettings.YSize, worldSettings.ZSize, worldSettings.Seed);
         worldRenderer?.RenderWorld(worldData, worldSettings);
+        Regenerated?.Invoke();
+    }
+
+    // Y of the first air cell above the highest solid block in the column.
+    public int GetSurfaceHeight(int x, int z)
+    {
+        for (int y = worldSettings.YSize - 1; y >= 0; y--)
+            if (TryGetBlock(new Vector3Int(x, y, z), out var block) && block.IsPresent)
+                return y + 1;
+        return 0;
     }
 
     // Reads the block at a world position; false when outside the world.
