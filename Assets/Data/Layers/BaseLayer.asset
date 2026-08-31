@@ -15,9 +15,9 @@ MonoBehaviour:
   enabled: 1
   noiseScale: 40
   octave: 2
-  amplitude: 16
+  amplitude: 8
   heightOffset: 0
-  blur: 0
+  blur: 5
   mask:
     enabled: 0
     noiseScale: 128.74

@@ -3,50 +3,60 @@ using UnityEngine;
 
 public class WorldRenderer : MonoBehaviour
 {
-    List<GameObject> cubes = new();
+    readonly Dictionary<Vector3Int, GameObject> chunkObjects = new();
 
+    // Full rebuild: throws away all chunk objects and creates them fresh.
     public void RenderWorld(WorldData world, WorldSettings settings)
     {
-        var chunkSize = settings.ChunkSize;
-        ClearCubes();
-        foreach(var ch in world.chunks)
-        {
-            Vector3 chunkPos = new Vector3(ch.Key.x * chunkSize, ch.Key.y * chunkSize, ch.Key.z * chunkSize);
-            RenderChunk(chunkPos, settings, ch.Value);
-        }
+        ClearChunks();
+        foreach (var chunkCoord in world.chunks.Keys)
+            RenderChunk(world, settings, chunkCoord);
     }
 
-    void RenderChunk(Vector3 center, WorldSettings settings, BlockData[] blocks)
+    // Rebuilds one chunk. After a block edit, call this for the edited chunk —
+    // and for the adjacent chunk too when the block sat on a chunk border.
+    public void RenderChunk(WorldData world, WorldSettings settings, Vector3Int chunkCoord)
     {
-        var chunkSize = settings.ChunkSize;
-        for(int x = 0; x < chunkSize; x++)
+        // -- drop the old version of this chunk, if any --
+        if (chunkObjects.TryGetValue(chunkCoord, out var oldObject))
         {
-            for(int y = 0; y < chunkSize; y++)
-            {
-                for(int z = 0; z < chunkSize; z++)
-                {
-                    var isPresent = blocks[WorldGenerator.BlockIndex(x, y, z, chunkSize)].IsPresent;
-                    var typeId = blocks[WorldGenerator.BlockIndex(x, y, z, chunkSize)].TypeId;
-                    if (!isPresent)
-                        continue;
-                    var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    cube.transform.SetParent(transform, false);
-                    cube.transform.position = new Vector3(center.x + x, center.y + y, center.z + z);
-                    if(cube.TryGetComponent<MeshRenderer>(out var mesh) && settings.TryGetBlockById(typeId, out var block))
-                        mesh.material = block.Material;
-                    cubes.Add(cube);
-                }
-            }
+            DestroyChunkObject(oldObject);
+            chunkObjects.Remove(chunkCoord);
         }
+
+        // -- build the mesh; empty/buried chunks produce no object at all --
+        var mesh = ChunkMeshBuilder.Build(world, chunkCoord, settings.ChunkSize, out var typeIds);
+        if (mesh == null)
+            return;
+
+        // -- create the chunk object at its world position --
+        var chunkObject = new GameObject($"Chunk {chunkCoord}");
+        chunkObject.transform.SetParent(transform, false);
+        chunkObject.transform.position = (Vector3)(chunkCoord * settings.ChunkSize);
+        chunkObject.AddComponent<MeshFilter>().mesh = mesh;
+
+        // -- one material per submesh, matched to the block types used --
+        var materials = new Material[typeIds.Count];
+        for (int i = 0; i < typeIds.Count; i++)
+            if (settings.TryGetBlockById(typeIds[i], out var block))
+                materials[i] = block.Material;
+        chunkObject.AddComponent<MeshRenderer>().materials = materials;
+
+        chunkObjects[chunkCoord] = chunkObject;
     }
 
-    void ClearCubes()
+    void ClearChunks()
     {
-        if(cubes.Count == 0) return;
-        for (int i = cubes.Count - 1; i >= 0; i--)
-        {
-            GameObject c = cubes[i];
-            Destroy(c);
-        }
+        foreach (var chunkObject in chunkObjects.Values)
+            DestroyChunkObject(chunkObject);
+        chunkObjects.Clear();
+    }
+
+    // Destroying the GameObject does not free its Mesh — destroy it explicitly
+    // or repeated regeneration leaks meshes.
+    static void DestroyChunkObject(GameObject chunkObject)
+    {
+        Destroy(chunkObject.GetComponent<MeshFilter>().sharedMesh);
+        Destroy(chunkObject);
     }
 }

@@ -15,14 +15,14 @@ MonoBehaviour:
   enabled: 1
   noiseScale: 11.3
   octave: 5
-  amplitude: 16
+  amplitude: 10
   heightOffset: 0
-  blur: 0
+  blur: 5
   mask:
     enabled: 1
     noiseScale: 11.3
     octave: 1
-    threshold: 0.36
+    threshold: 0.44
     feather: 1
     blur: 0
     invert: 0

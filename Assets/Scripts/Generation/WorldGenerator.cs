@@ -97,8 +97,7 @@ public static class WorldGenerator
                 {
                     int worldY = localY + chunkCoordinate.y * size;
                     int i = BlockIndex(localX, localY, localZ, size);
-                    blockData[i].IsPresent = worldY < terrainHeight;
-                    blockData[i].TypeId = PickBlockTypeId(worldX, worldY, worldZ, heightBands);
+                    blockData[i].TypeId = worldY < terrainHeight ? PickBlockTypeId(worldX, worldY, worldZ, heightBands) : 0;
                 }
             }
         }
