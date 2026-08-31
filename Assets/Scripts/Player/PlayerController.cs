@@ -50,13 +50,11 @@ public class PlayerController : MonoBehaviour
         Respawn();
     }
 
-    // Drops the player at the middle of the map, 2 blocks above the ground.
+    // Drops the player at the world origin, 2 blocks above the ground.
     void Respawn()
     {
-        int centerX = world.WorldSettings.XSize / 2;
-        int centerZ = world.WorldSettings.ZSize / 2;
-        float y = world.GetSurfaceHeight(centerX, centerZ) + 2f;
-        transform.position = new Vector3(centerX + 0.5f, y, centerZ + 0.5f);
+        float y = world.GetSurfaceHeight(0, 0) + 2f;
+        transform.position = new Vector3(0.5f, y, 0.5f);
         velocity = Vector3.zero;
         grounded = false;
     }

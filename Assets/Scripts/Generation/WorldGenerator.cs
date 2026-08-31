@@ -17,6 +17,7 @@ public struct LayerOffsets
 public static class WorldGenerator
 {
     public static string ResolveSeed(string configuredSeed) => string.IsNullOrEmpty(configuredSeed) ? System.Guid.NewGuid().ToString() : configuredSeed;
+
     public static float GetSubSeed(string seed, string noiseName = "")
     {
         int hash = 0;
@@ -26,33 +27,7 @@ public static class WorldGenerator
         return ((uint)hash % 256_000u) / 1000f;
     }
 
-    public static WorldData GenerateWorld(WorldSettings settings, int xSize, int ySize, int zSize, string seed)
-    {
-        seed = ResolveSeed(seed);
-        var world = new WorldData(seed, ySize);
-        if (settings.NoiseLayers == null || settings.NoiseLayers.Count == 0)
-        {
-            Debug.LogWarning("World generation skipped: WorldSettings has no noise layers.");
-            return world;
-        }
-        var heightBands = BuildHeightBands(settings);
-        var layerOffsets = BuildLayerOffsets(settings, seed);
-        var typeJitterOffset = new Vector2(GetSubSeed(seed, "typeJitterx"), GetSubSeed(seed, "typeJitterz"));
-        for(int chunkX = 0; chunkX < xSize / settings.ChunkSize; chunkX++)
-        {
-            for(int chunkZ = 0; chunkZ < zSize / settings.ChunkSize; chunkZ++)
-            {
-                for(int chunkY = 0; chunkY < ySize / settings.ChunkSize; chunkY++)
-                {
-                    Vector3Int chunkCoordinate = new Vector3Int(chunkX, chunkY, chunkZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands, layerOffsets, typeJitterOffset);
-                    world.chunks.Add(chunkCoordinate, newChunk);
-                }
-            }
-        }
-        return world;
-    }
-
+    // Converts each block type's normalized height range into block heights.
     public static HeightBand[] BuildHeightBands(WorldSettings settings)
     {
         var bands = new HeightBand[settings.Blocks.Count];
@@ -69,6 +44,7 @@ public static class WorldGenerator
         return bands;
     }
 
+    // Per-layer noise sampling offsets derived from the seed and layer index.
     public static LayerOffsets[] BuildLayerOffsets(WorldSettings settings, string seed)
     {
         var offsets = new LayerOffsets[settings.NoiseLayers.Count];
@@ -83,16 +59,18 @@ public static class WorldGenerator
         return offsets;
     }
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands, LayerOffsets[] layerOffsets, Vector2 typeJitterOffset)
+    // Generates one full-height column chunk (chunkSize × ySize × chunkSize).
+    public static BlockData[] GenerateChunk(WorldSettings settings, HeightBand[] heightBands, LayerOffsets[] layerOffsets, Vector2 typeJitterOffset, int chunkX, int chunkZ)
     {
-        var size = settings.ChunkSize;
-        var blockData = new BlockData[size * size * size];
-        for(int localX = 0; localX < size; localX++)
+        int size = settings.ChunkSize;
+        int sizeY = settings.YSize;
+        var blockData = new BlockData[size * size * sizeY];
+        for (int localX = 0; localX < size; localX++)
         {
-            for(int localZ = 0; localZ < size; localZ++)
+            for (int localZ = 0; localZ < size; localZ++)
             {
-                int worldX = localX + chunkCoordinate.x * size;
-                int worldZ = localZ + chunkCoordinate.z * size;
+                int worldX = localX + chunkX * size;
+                int worldZ = localZ + chunkZ * size;
                 int terrainHeight = GetTerrainHeight(settings, layerOffsets, worldX, worldZ);
 
                 // smooth per-column shift of the block type bands (0 = feature off)
@@ -102,12 +80,9 @@ public static class WorldGenerator
                         worldX + typeJitterOffset.x, worldZ + typeJitterOffset.y,
                         settings.TypeJitterScale, settings.TypeJitterOctave, 0f));
 
-                for(int localY = 0; localY < size; localY++)
-                {
-                    int worldY = localY + chunkCoordinate.y * size;
-                    int i = BlockIndex(localX, localY, localZ, size);
-                    blockData[i].TypeId = worldY < terrainHeight ? PickBlockTypeId(worldY + typeShift, heightBands) : 0;
-                }
+                for (int y = 0; y < sizeY; y++)
+                    blockData[BlockIndex(localX, y, localZ, size)].TypeId =
+                        y < terrainHeight ? PickBlockTypeId(y + typeShift, heightBands) : 0;
             }
         }
         return blockData;
@@ -189,6 +164,4 @@ public static class WorldGenerator
         }
         return bestInfluence >= 0f ? bestId : nearestId;
     }
-
-
 }
