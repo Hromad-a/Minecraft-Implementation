@@ -15,14 +15,18 @@ MonoBehaviour:
   ySize: 128
   xSize: 128
   zSize: 128
-  chunkSize: 16
+  chunkSize: 8
   groundLevel: 0.5
   seed: Seed
   noiseLayers:
   - {fileID: 11400000, guid: 1734b3a4aa361d04b8107bf15d24bfd4, type: 2}
   - {fileID: 11400000, guid: 0e7fa1b3b3ba1084199ad2d4c638f82c, type: 2}
   - {fileID: 11400000, guid: 44617da185a267140bd87786308d0685, type: 2}
+  - {fileID: 11400000, guid: f5da09887269847479b25cbd2b2eb6da, type: 2}
   blocks:
   - {fileID: 11400000, guid: d4990335a2aa644edb5256ae9f739fed, type: 2}
   - {fileID: 11400000, guid: 222bb5a69ff384375a2f0056bbb12c6e, type: 2}
   - {fileID: 11400000, guid: 930d63bd198ce435b95941dc0d40b3fa, type: 2}
+  typeJitterAmplitude: 6
+  typeJitterScale: 20
+  typeJitterOctave: 3

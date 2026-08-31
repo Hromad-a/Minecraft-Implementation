@@ -4,6 +4,7 @@ using UnityEngine;
 public class NoiseLayer : ScriptableObject
 {
     [SerializeField] private bool enabled = true;
+    [SerializeField, Range(0f, 1f), Tooltip("Overall strength of this layer; scales its whole contribution")] private float influence = 1f;
     [SerializeField, Min(0.01f), Tooltip("Horizontal size of features in blocks")] private float noiseScale = 40f;
     [SerializeField, Min(1)] private int octave = 3;
     [SerializeField, Tooltip("Vertical strength: layer contributes ±amplitude blocks")] private float amplitude = 32f;
@@ -12,6 +13,7 @@ public class NoiseLayer : ScriptableObject
     [SerializeField] private NoiseMask mask;
 
     public bool Enabled => enabled;
+    public float Influence => influence;
     public float NoiseScale => noiseScale;
     public int Octave => octave;
     public float Amplitude => amplitude;

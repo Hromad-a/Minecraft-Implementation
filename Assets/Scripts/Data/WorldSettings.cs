@@ -13,6 +13,10 @@ public class WorldSettings : ScriptableObject
     [SerializeField, Tooltip("No value = Random")] private string seed;
     [SerializeField] private List<NoiseLayer> noiseLayers;
     [SerializeField] private List<BlockDefinitionBase> blocks;
+    [Header("Block type boundary jitter")]
+    [SerializeField, Min(0f), Tooltip("How many blocks the type boundaries shift up/down; 0 = off")] private float typeJitterAmplitude = 4f;
+    [SerializeField, Min(0.01f), Tooltip("Horizontal size of the boundary waves in blocks")] private float typeJitterScale = 30f;
+    [SerializeField, Min(1)] private int typeJitterOctave = 2;
 
     public string Seed { get { return seed; } }
     public int YSize { get { return ySize; } }
@@ -22,6 +26,9 @@ public class WorldSettings : ScriptableObject
     public float GroundLevel { get { return groundLevel; } }
     public List<NoiseLayer> NoiseLayers { get { return noiseLayers; } }
     public List<BlockDefinitionBase> Blocks {get {return blocks;}}
+    public float TypeJitterAmplitude => typeJitterAmplitude;
+    public float TypeJitterScale => typeJitterScale;
+    public int TypeJitterOctave => typeJitterOctave;
 
     public void RegenerateWorld()
     {

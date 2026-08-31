@@ -37,6 +37,7 @@ public static class WorldGenerator
         }
         var heightBands = BuildHeightBands(settings);
         var layerOffsets = BuildLayerOffsets(settings, seed);
+        var typeJitterOffset = new Vector2(GetSubSeed(seed, "typeJitterx"), GetSubSeed(seed, "typeJitterz"));
         for(int chunkX = 0; chunkX < xSize / settings.ChunkSize; chunkX++)
         {
             for(int chunkZ = 0; chunkZ < zSize / settings.ChunkSize; chunkZ++)
@@ -44,7 +45,7 @@ public static class WorldGenerator
                 for(int chunkY = 0; chunkY < ySize / settings.ChunkSize; chunkY++)
                 {
                     Vector3Int chunkCoordinate = new Vector3Int(chunkX, chunkY, chunkZ);
-                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands, layerOffsets);
+                    var newChunk = GenerateChunk(settings, chunkCoordinate, heightBands, layerOffsets, typeJitterOffset);
                     world.chunks.Add(chunkCoordinate, newChunk);
                 }
             }
@@ -82,7 +83,7 @@ public static class WorldGenerator
         return offsets;
     }
 
-    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands, LayerOffsets[] layerOffsets)
+    public static BlockData[] GenerateChunk(WorldSettings settings, Vector3Int chunkCoordinate, HeightBand[] heightBands, LayerOffsets[] layerOffsets, Vector2 typeJitterOffset)
     {
         var size = settings.ChunkSize;
         var blockData = new BlockData[size * size * size];
@@ -93,11 +94,19 @@ public static class WorldGenerator
                 int worldX = localX + chunkCoordinate.x * size;
                 int worldZ = localZ + chunkCoordinate.z * size;
                 int terrainHeight = GetTerrainHeight(settings, layerOffsets, worldX, worldZ);
+
+                // smooth per-column shift of the block type bands (0 = feature off)
+                int typeShift = 0;
+                if (settings.TypeJitterAmplitude > 0f)
+                    typeShift = Mathf.RoundToInt(settings.TypeJitterAmplitude * SampleNoise(
+                        worldX + typeJitterOffset.x, worldZ + typeJitterOffset.y,
+                        settings.TypeJitterScale, settings.TypeJitterOctave, 0f));
+
                 for(int localY = 0; localY < size; localY++)
                 {
                     int worldY = localY + chunkCoordinate.y * size;
                     int i = BlockIndex(localX, localY, localZ, size);
-                    blockData[i].TypeId = worldY < terrainHeight ? PickBlockTypeId(worldX, worldY, worldZ, heightBands) : 0;
+                    blockData[i].TypeId = worldY < terrainHeight ? PickBlockTypeId(worldY + typeShift, heightBands) : 0;
                 }
             }
         }
@@ -110,14 +119,14 @@ public static class WorldGenerator
         for (int i = 0; i < settings.NoiseLayers.Count; i++)
         {
             var layer = settings.NoiseLayers[i];
-            if (!layer.Enabled)
+            if (!layer.Enabled || layer.Influence <= 0f)
                 continue;
             var offsets = layerOffsets[i];
             float mask = EvaluateMask(layer.Mask, offsets.Mask, worldX, worldZ);
             if (mask <= 0f)
                 continue;
             float noise = SampleNoise(worldX + offsets.Noise.x, worldZ + offsets.Noise.y, layer.NoiseScale, layer.Octave, layer.Blur); // -1..1
-            height += (noise * layer.Amplitude + layer.HeightOffset) * mask;
+            height += (noise * layer.Amplitude + layer.HeightOffset) * mask * layer.Influence;
         }
         return Mathf.Clamp(Mathf.CeilToInt(height), 0, settings.YSize);
     }
@@ -149,7 +158,7 @@ public static class WorldGenerator
 
     public static int BlockIndex(int localX, int localY, int localZ, int chunkSize) => localX + localZ * chunkSize + localY * chunkSize * chunkSize;
 
-    public static int PickBlockTypeId(int worldX, int worldY, int worldZ, HeightBand[] heightBands)
+    public static int PickBlockTypeId(int worldY, HeightBand[] heightBands)
     {
         int bestId = 0;
         float bestInfluence = -1f;

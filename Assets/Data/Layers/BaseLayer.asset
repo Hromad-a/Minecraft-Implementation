@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BaseLayer
   m_EditorClassIdentifier: Assembly-CSharp::NoiseLayer
   enabled: 1
+  influence: 1
   noiseScale: 40
   octave: 2
   amplitude: 8
