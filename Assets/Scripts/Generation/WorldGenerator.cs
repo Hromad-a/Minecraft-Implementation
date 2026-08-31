@@ -14,6 +14,16 @@ public struct LayerOffsets
     public Vector2 Mask;
 }
 
+// Terrain heights and type-band shifts for one chunk column (x,z), computed
+// once and shared by every cubic chunk stacked in that column.
+public struct ChunkColumn
+{
+    public int[] Heights;
+    public int[] TypeShifts;
+    public int MinHeight;
+    public int MaxHeight;
+}
+
 public static class WorldGenerator
 {
     public static string ResolveSeed(string configuredSeed) => string.IsNullOrEmpty(configuredSeed) ? System.Guid.NewGuid().ToString() : configuredSeed;
@@ -59,30 +69,59 @@ public static class WorldGenerator
         return offsets;
     }
 
-    // Generates one full-height column chunk (chunkSize × ySize × chunkSize).
-    public static BlockData[] GenerateChunk(WorldSettings settings, HeightBand[] heightBands, LayerOffsets[] layerOffsets, Vector2 typeJitterOffset, int chunkX, int chunkZ)
+    // Terrain heights + type shifts for every column of one chunk footprint.
+    public static ChunkColumn BuildColumn(WorldSettings settings, LayerOffsets[] layerOffsets, Vector2 typeJitterOffset, int chunkX, int chunkZ)
     {
         int size = settings.ChunkSize;
-        int sizeY = settings.YSize;
-        var blockData = new BlockData[size * size * sizeY];
+        var column = new ChunkColumn
+        {
+            Heights = new int[size * size],
+            TypeShifts = new int[size * size],
+            MinHeight = int.MaxValue,
+            MaxHeight = int.MinValue,
+        };
         for (int localX = 0; localX < size; localX++)
         {
             for (int localZ = 0; localZ < size; localZ++)
             {
                 int worldX = localX + chunkX * size;
                 int worldZ = localZ + chunkZ * size;
-                int terrainHeight = GetTerrainHeight(settings, layerOffsets, worldX, worldZ);
+                int i = localX + localZ * size;
+                int height = GetTerrainHeight(settings, layerOffsets, worldX, worldZ);
+                column.Heights[i] = height;
+                column.MinHeight = Mathf.Min(column.MinHeight, height);
+                column.MaxHeight = Mathf.Max(column.MaxHeight, height);
 
                 // smooth per-column shift of the block type bands (0 = feature off)
-                int typeShift = 0;
                 if (settings.TypeJitterAmplitude > 0f)
-                    typeShift = Mathf.RoundToInt(settings.TypeJitterAmplitude * SampleNoise(
+                    column.TypeShifts[i] = Mathf.RoundToInt(settings.TypeJitterAmplitude * SampleNoise(
                         worldX + typeJitterOffset.x, worldZ + typeJitterOffset.y,
                         settings.TypeJitterScale, settings.TypeJitterOctave, 0f));
+            }
+        }
+        return column;
+    }
 
-                for (int y = 0; y < sizeY; y++)
-                    blockData[BlockIndex(localX, y, localZ, size)].TypeId =
-                        y < terrainHeight ? PickBlockTypeId(y + typeShift, heightBands) : 0;
+    // Generates one cubic chunk (chunkSize³) at vertical index chunkY, using the
+    // precomputed column data. Only solid cells are written, so chunks above the
+    // terrain cost almost nothing.
+    public static BlockData[] GenerateChunk(WorldSettings settings, HeightBand[] heightBands, ChunkColumn column, int chunkY)
+    {
+        int size = settings.ChunkSize;
+        var blockData = new BlockData[size * size * size];
+        for (int localX = 0; localX < size; localX++)
+        {
+            for (int localZ = 0; localZ < size; localZ++)
+            {
+                int i = localX + localZ * size;
+                int solidCount = Mathf.Clamp(column.Heights[i] - chunkY * size, 0, size);
+                int typeShift = column.TypeShifts[i];
+                for (int localY = 0; localY < solidCount; localY++)
+                {
+                    int worldY = localY + chunkY * size;
+                    blockData[BlockIndex(localX, localY, localZ, size)].TypeId =
+                        PickBlockTypeId(worldY + typeShift, heightBands);
+                }
             }
         }
         return blockData;

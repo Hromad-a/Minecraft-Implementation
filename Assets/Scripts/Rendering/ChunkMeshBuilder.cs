@@ -35,22 +35,22 @@ public static class ChunkMeshBuilder
     static readonly List<Vector2> uvs = new();
     static readonly List<List<int>> trianglesPerSubmesh = new();
 
-    // Rebuilds `mesh` as the column chunk's geometry with only air-facing faces.
+    // Rebuilds `mesh` as the cubic chunk's geometry with only air-facing faces.
     // Submeshes are index-aligned with settings.Blocks (empty ones stay empty),
-    // so every chunk can share one material array.
-    public static void Build(WorldData world, WorldSettings settings, Vector2Int chunkCoord, Mesh mesh)
+    // so every chunk can share one material array. Returns false when the chunk
+    // has no visible geometry (all air, or fully buried).
+    public static bool Build(WorldData world, WorldSettings settings, Vector3Int chunkCoord, Mesh mesh)
     {
         int size = world.chunkSize;
-        int sizeY = world.sizeY;
         var blocks = world.GetChunkCells(chunkCoord);
 
-        // -- fetch the four horizontal neighbor chunks once (vertical faces never leave the column) --
+        // -- fetch the six neighbor chunks once (null = above/below the world = air) --
         var neighbors = new BlockData[6][];
         for (int face = 0; face < 6; face++)
         {
-            var direction = faceDirections[face];
-            if (direction.y == 0)
-                neighbors[face] = world.GetChunkCells(chunkCoord + new Vector2Int(direction.x, direction.z));
+            var neighborCoord = chunkCoord + faceDirections[face];
+            if (neighborCoord.y >= 0 && neighborCoord.y < world.StackCount)
+                neighbors[face] = world.GetChunkCells(neighborCoord);
         }
 
         // -- reset the shared buffers --
@@ -65,7 +65,7 @@ public static class ChunkMeshBuilder
         // -- emit a face for every solid block side that touches air --
         // y-z-x order walks the array sequentially (BlockIndex = x + z*size + y*size²)
         int index = 0;
-        for (int y = 0; y < sizeY; y++)
+        for (int y = 0; y < size; y++)
         for (int z = 0; z < size; z++)
         for (int x = 0; x < size; x++)
         {
@@ -76,7 +76,7 @@ public static class ChunkMeshBuilder
 
             for (int face = 0; face < 6; face++)
             {
-                if (IsFaceCovered(blocks, neighbors[face], localPos + faceDirections[face], size, sizeY))
+                if (IsFaceCovered(blocks, neighbors[face], localPos + faceDirections[face], size))
                     continue;
                 AddFace(localPos, face, SubmeshIndex(settings, block.TypeId));
             }
@@ -84,13 +84,13 @@ public static class ChunkMeshBuilder
 
         // -- write the geometry into the mesh --
         mesh.Clear();
-        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // tall columns can pass 65k vertices
         mesh.SetVertices(vertices);
         mesh.SetNormals(normals);
         mesh.SetUVs(0, uvs);
         mesh.subMeshCount = settings.Blocks.Count;
         for (int s = 0; s < settings.Blocks.Count; s++)
             mesh.SetTriangles(trianglesPerSubmesh[s], s);
+        return vertices.Count > 0;
     }
 
     // Which submesh (index into settings.Blocks) a block type renders with.
@@ -136,20 +136,21 @@ public static class ChunkMeshBuilder
 
     // Is the block on the far side of a face solid? neighborPos is in this chunk's
     // local coords and may be one step outside it on exactly one axis.
-    static bool IsFaceCovered(BlockData[] blocks, BlockData[] neighborChunk, Vector3Int neighborPos, int size, int sizeY)
+    static bool IsFaceCovered(BlockData[] blocks, BlockData[] neighborChunk, Vector3Int neighborPos, int size)
     {
-        // -- above or below the world: always air --
-        if (neighborPos.y < 0 || neighborPos.y >= sizeY)
-            return false;
-
-        // -- neighbor inside this same column: direct lookup --
+        // -- neighbor inside this same chunk: direct lookup --
         bool insideChunk = neighborPos.x >= 0 && neighborPos.x < size
+                        && neighborPos.y >= 0 && neighborPos.y < size
                         && neighborPos.z >= 0 && neighborPos.z < size;
         if (insideChunk)
             return blocks[WorldGenerator.BlockIndex(neighborPos.x, neighborPos.y, neighborPos.z, size)].IsPresent;
 
-        // -- neighbor in the adjacent column: wrap the out-of-range coordinate --
-        var p = new Vector3Int((neighborPos.x + size) % size, neighborPos.y, (neighborPos.z + size) % size);
+        // -- no chunk on that side (above/below the world): air --
+        if (neighborChunk == null)
+            return false;
+
+        // -- neighbor in the adjacent chunk: wrap the out-of-range coordinate --
+        var p = new Vector3Int((neighborPos.x + size) % size, (neighborPos.y + size) % size, (neighborPos.z + size) % size);
         return neighborChunk[WorldGenerator.BlockIndex(p.x, p.y, p.z, size)].IsPresent;
     }
 }

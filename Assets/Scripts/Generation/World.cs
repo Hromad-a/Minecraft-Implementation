@@ -47,15 +47,16 @@ public class World : MonoBehaviour
         worldData.SetBlock(worldPos, typeId);
 
         int chunkSize = worldData.chunkSize;
-        var chunkCoord = worldData.ChunkCoord(worldPos.x, worldPos.z);
-        int localX = worldPos.x - chunkCoord.x * chunkSize;
-        int localZ = worldPos.z - chunkCoord.y * chunkSize;
+        var chunkCoord = worldData.ChunkCoord(worldPos);
+        var local = worldPos - chunkCoord * chunkSize;
 
         worldRenderer?.RebuildChunk(chunkCoord);
-        if (localX == 0) worldRenderer?.RebuildChunk(chunkCoord + Vector2Int.left);
-        if (localX == chunkSize - 1) worldRenderer?.RebuildChunk(chunkCoord + Vector2Int.right);
-        if (localZ == 0) worldRenderer?.RebuildChunk(chunkCoord + Vector2Int.down);
-        if (localZ == chunkSize - 1) worldRenderer?.RebuildChunk(chunkCoord + Vector2Int.up);
+        if (local.x == 0) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.left);
+        if (local.x == chunkSize - 1) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.right);
+        if (local.y == 0) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.down);
+        if (local.y == chunkSize - 1) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.up);
+        if (local.z == 0) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.back);
+        if (local.z == chunkSize - 1) worldRenderer?.RebuildChunk(chunkCoord + Vector3Int.forward);
     }
 
     // Y of the first air cell above the highest solid block in the column.
@@ -67,17 +68,3 @@ public class World : MonoBehaviour
         return 0;
     }
 }
-
-#if UNITY_EDITOR
-[UnityEditor.CustomEditor(typeof(World))]
-public class WorldEditor : UnityEditor.Editor
-{
-    public override void OnInspectorGUI()
-    {
-        DrawDefaultInspector();
-        UnityEditor.EditorGUILayout.Space();
-        if (GUILayout.Button("Regenerate world") && Application.isPlaying)
-            ((World)target).RegenerateWorld();
-    }
-}
-#endif

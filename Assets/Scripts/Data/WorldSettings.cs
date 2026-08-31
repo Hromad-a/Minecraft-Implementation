@@ -39,3 +39,17 @@ public class WorldSettings : ScriptableObject
         return false;
     }
 }
+
+#if UNITY_EDITOR
+[UnityEditor.CustomEditor(typeof(WorldSettings))]
+public class WorldSettingsEditor : UnityEditor.Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+        UnityEditor.EditorGUILayout.Space();
+        if (GUILayout.Button("Regenerate world") && Application.isPlaying)
+            FindFirstObjectByType<World>()?.RegenerateWorld();
+    }
+}
+#endif

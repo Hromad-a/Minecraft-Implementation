@@ -12,10 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4acd31f62abc8cc488b2822869d0b2b7, type: 3}
   m_Name: WorldSettings
   m_EditorClassIdentifier: Assembly-CSharp::WorldSettings
-  ySize: 128
-  xSize: 128
-  zSize: 128
-  chunkSize: 8
+  ySize: 256
+  chunkSize: 16
   groundLevel: 0.5
   seed: 
   noiseLayers:
