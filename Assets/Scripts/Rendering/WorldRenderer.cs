@@ -34,6 +34,7 @@ public class WorldRenderer : MonoBehaviour
         chunkObject.transform.SetParent(transform, false);
         chunkObject.transform.position = (Vector3)(chunkCoord * settings.ChunkSize);
         chunkObject.AddComponent<MeshFilter>().mesh = mesh;
+        chunkObject.AddComponent<MeshCollider>().sharedMesh = mesh;
 
         // -- one material per submesh, matched to the block types used --
         var materials = new Material[typeIds.Count];
