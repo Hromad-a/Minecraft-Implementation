@@ -38,8 +38,6 @@ public class WorldData
     // How many cubic chunks are stacked vertically.
     public int StackCount => (sizeY + chunkSize - 1) / chunkSize;
 
-    public bool HasChunk(Vector3Int chunkCoord) => chunks.ContainsKey(chunkCoord);
-
     // The chunk's raw cell array, generated on demand.
     public BlockData[] GetChunkCells(Vector3Int chunkCoord)
     {

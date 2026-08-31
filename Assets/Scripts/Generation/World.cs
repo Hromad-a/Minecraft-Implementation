@@ -5,8 +5,8 @@ public class World : MonoBehaviour
     [SerializeField] WorldSettings worldSettings;
     WorldData worldData;
     WorldRenderer worldRenderer;
-    public WorldData WorldData {get {return worldData;}}
-    public WorldSettings WorldSettings { get{return worldSettings;}}
+    public WorldData WorldData => worldData;
+    public WorldSettings WorldSettings => worldSettings;
     public event System.Action Regenerated;
 
     void Awake()

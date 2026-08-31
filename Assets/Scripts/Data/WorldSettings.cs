@@ -15,12 +15,12 @@ public class WorldSettings : ScriptableObject
     [SerializeField, Min(0.01f), Tooltip("Horizontal size of the boundary waves in blocks")] private float typeJitterScale = 30f;
     [SerializeField, Min(1)] private int typeJitterOctave = 2;
 
-    public string Seed { get { return seed; } }
-    public int YSize { get { return ySize; } }
-    public int ChunkSize {get{return chunkSize;}}
-    public float GroundLevel { get { return groundLevel; } }
-    public List<NoiseLayer> NoiseLayers { get { return noiseLayers; } }
-    public List<BlockDefinitionBase> Blocks {get {return blocks;}}
+    public string Seed => seed;
+    public int YSize => ySize;
+    public int ChunkSize => chunkSize;
+    public float GroundLevel => groundLevel;
+    public List<NoiseLayer> NoiseLayers => noiseLayers;
+    public List<BlockDefinitionBase> Blocks => blocks;
     public float TypeJitterAmplitude => typeJitterAmplitude;
     public float TypeJitterScale => typeJitterScale;
     public int TypeJitterOctave => typeJitterOctave;
